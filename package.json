@@ -1,0 +1,23 @@
+{
+  "name": "opencode-gateway",
+  "version": "0.1.0",
+  "description": "Agent gateway built on top of OpenCode server mode",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@opencode-ai/sdk": "^1.4.17",
+    "hono": "^4.7.10"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}
