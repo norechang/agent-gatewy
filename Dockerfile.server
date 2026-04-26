@@ -1,0 +1,61 @@
+# Dockerfile for OpenCode server
+# Based on https://github.com/glennvdv/opencode-dockerized
+FROM debian:bookworm-slim
+
+# Parameterize tool versions for easier updates
+ARG NVM_VERSION=v0.40.1
+
+# Install base dependencies and useful CLI tools
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    bash \
+    ca-certificates \
+    sudo \
+    procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -s /bin/bash -u 1000 coder && \
+    echo "coder ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Switch to coder user for installation
+USER coder
+WORKDIR /home/coder
+
+# Install NVM and Node.js LTS as coder user
+ENV NVM_DIR="/home/coder/.nvm"
+RUN curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash && \
+    bash -c "source $NVM_DIR/nvm.sh && \
+    nvm install --lts && \
+    nvm alias default node && \
+    nvm use default && \
+    ln -sf \$(dirname \$(which node)) $NVM_DIR/default"
+
+# Add node to PATH
+ENV PATH="$NVM_DIR/default:$PATH"
+
+# Install OpenCode globally
+RUN bash -c "source $NVM_DIR/nvm.sh && npm install -g opencode-ai@latest"
+
+# Switch back to root for entrypoint setup
+USER root
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /home/coder/.config/opencode && \
+    mkdir -p /home/coder/.local/share/opencode && \
+    mkdir -p /home/coder/.cache/opencode && \
+    chown -R coder:coder /home/coder
+
+# Default working directory
+WORKDIR /app
+
+# Copy entrypoint script
+COPY entrypoint-server.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Set the entrypoint (runs as root, then switches to coder)
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+# Default command is to run opencode serve
+CMD ["opencode", "serve", "--port", "4096", "--hostname", "0.0.0.0"]
