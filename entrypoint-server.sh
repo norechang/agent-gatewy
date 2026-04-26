@@ -44,15 +44,16 @@ export USER=coder
 export NVM_DIR="/home/coder/.nvm"
 
 # Ensure critical OpenCode directories exist and are writable by the mapped user
-# Create and fix ownership/permissions for cache and data directories that may be
-# bind-mounted from the host. We attempt to chown; if it fails we continue but
-# emit a warning so operators can inspect host-side permissions.
-mkdir -p /home/coder/.cache/opencode /home/coder/.local/share/opencode /home/coder/.config/opencode || true
-if chown -R "$TARGET_UID:$TARGET_GID" /home/coder/.cache/opencode /home/coder/.local/share/opencode /home/coder/.config/opencode 2>/dev/null; then
-    chmod -R 0755 /home/coder/.cache/opencode /home/coder/.local/share/opencode /home/coder/.config/opencode || true
-else
-    echo "warning: unable to chown OpenCode cache/data directories. Check host mount permissions." >&2
-fi
+# These directories may be bind-mounted from the host, so we just ensure they exist
+# and are owned by the target user at the top level (not recursively)
+mkdir -p /home/coder/.cache/opencode/bin 2>/dev/null || true
+mkdir -p /home/coder/.local/share/opencode 2>/dev/null || true
+mkdir -p /home/coder/.config/opencode 2>/dev/null || true
+
+# Attempt to set ownership at top level only (not recursive to avoid slowness with bind mounts)
+chown "$TARGET_UID:$TARGET_GID" /home/coder/.cache/opencode 2>/dev/null || true
+chown "$TARGET_UID:$TARGET_GID" /home/coder/.local/share/opencode 2>/dev/null || true
+chown "$TARGET_UID:$TARGET_GID" /home/coder/.config/opencode 2>/dev/null || true
 
 # Use setpriv to drop privileges and exec the command as the mapped user
 exec setpriv --reuid="$TARGET_UID" --regid="$TARGET_GID" --init-groups \
