@@ -11,12 +11,12 @@ services:
       - ./.opencode:/app/.opencode:ro
     working_dir: /app
     command: >
-      sh -c "
+      bash -c "
         apt-get update && apt-get install -y curl procps &&
         curl -fsSL https://opencode.ai/install | bash &&
-        export PATH=\"/root/.local/bin:\$PATH\" &&
+        source /root/.bashrc &&
         cd /app/.opencode &&
-        if [ -f package.json ]; then npm ci --only=production; fi &&
+        if [ -f package.json ]; then npm ci --omit=dev; fi &&
         cd /app &&
         opencode serve --port 4096 --hostname 0.0.0.0
       "
