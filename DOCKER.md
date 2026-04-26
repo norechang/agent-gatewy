@@ -57,7 +57,9 @@ Edit `.env` if needed:
 PORT=3000
 
 # Path to OpenCode config (contains credentials)
-OPENCODE_CONFIG_PATH=~/.config/opencode
+# Leave commented to use $HOME/.config/opencode by default
+# Or set to absolute path (no tilde expansion)
+#OPENCODE_CONFIG_PATH=/home/username/.config/opencode
 ```
 
 ### 2. Start the services
@@ -157,15 +159,16 @@ docker-compose up -d --build
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `3000` | Gateway HTTP port |
-| `OPENCODE_CONFIG_PATH` | `~/.config/opencode` | Path to OpenCode user config |
+| `OPENCODE_CONFIG_PATH` | `$HOME/.config/opencode` | Path to OpenCode user config (must be absolute path) |
 
 ### Volume Mounts
 
 The `docker-compose.yml` mounts:
 
-1. **OpenCode user config** (`~/.config/opencode` → `/root/.config/opencode`)
+1. **OpenCode user config** (`$HOME/.config/opencode` → `/root/.config/opencode`)
    - Contains LLM provider credentials
    - Mounted read-only for security
+   - Uses `$HOME` environment variable (not `~`) for proper expansion
 
 2. **Project agent definitions** (`./.opencode` → `/app/.opencode`)
    - Agent definition files (`agents/reporter.md`)

@@ -6,7 +6,7 @@ services:
     container_name: opencode-server
     volumes:
       # Mount OpenCode user configuration (contains LLM provider credentials)
-      - ${OPENCODE_CONFIG_PATH:-~/.config/opencode}:/root/.config/opencode:ro
+      - ${OPENCODE_CONFIG_PATH:-$HOME/.config/opencode}:/root/.config/opencode:ro
       # Mount agent definitions from this project
       - ./.opencode:/app/.opencode:ro
     working_dir: /app
@@ -25,11 +25,11 @@ services:
     networks:
       - gateway-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4096/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:4096/health || curl -f http://localhost:4096/ || exit 1"]
       interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
     restart: unless-stopped
 
   gateway:
