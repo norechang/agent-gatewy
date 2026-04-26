@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  opencode-server:
+    image: node:20-slim
+    container_name: opencode-server
+    volumes:
+      # Mount OpenCode user configuration (contains LLM provider credentials)
+      - ${OPENCODE_CONFIG_PATH:-~/.config/opencode}:/root/.config/opencode:ro
+      # Mount agent definitions from this project
+      - ./.opencode:/app/.opencode:ro
+    working_dir: /app
+    command: >
+      sh -c "
+        apt-get update && apt-get install -y curl procps &&
+        curl -fsSL https://opencode.ai/install | bash &&
+        export PATH=\"/root/.local/bin:\$PATH\" &&
+        cd /app/.opencode &&
+        if [ -f package.json ]; then npm ci --only=production; fi &&
+        cd /app &&
+        opencode serve --port 4096 --hostname 0.0.0.0
+      "
+    ports:
+      - "4096:4096"
+    networks:
+      - gateway-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4096/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: opencode-gateway
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - OPENCODE_SERVER_URL=http://opencode-server:4096
+      - NODE_ENV=production
+    depends_on:
+      opencode-server:
+        condition: service_healthy
+    networks:
+      - gateway-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+networks:
+  gateway-network:
+    driver: bridge
