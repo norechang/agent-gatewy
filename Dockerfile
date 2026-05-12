@@ -1,3 +1,21 @@
+FROM node:20-slim AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci
+
+# Copy source code
+COPY src ./src
+COPY tsconfig.json ./
+
+# Build TypeScript
+RUN npm run build
+
+# Production stage
 FROM node:20-slim
 
 # Install curl for health checks
@@ -10,12 +28,11 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install production dependencies only
 RUN npm ci --omit=dev
 
-# Copy source code
-COPY src ./src
-COPY tsconfig.json ./
+# Copy built JavaScript from builder
+COPY --from=builder /app/dist ./dist
 
 # Create non-root user for security
 RUN useradd -m -u 1001 gateway && \
@@ -29,4 +46,4 @@ ENV NODE_ENV=production
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["node", "dist/index.js"]
