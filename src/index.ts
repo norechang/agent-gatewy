@@ -4,7 +4,7 @@ import { initOpenCode, shutdownOpenCode, getClient } from "./opencode.js"
 import { runRoute, validateAgents, getGatewayAgents } from "./routes/agent.js"
 
 const PORT = Number(process.env.PORT ?? 3000)
-const HOSTNAME = process.env.HOSTNAME ?? "127.0.0.1"
+const HOSTNAME = process.env.HOSTNAME ?? "0.0.0.0"
 
 // ---------------------------------------------------------------------------
 // Connect to or spawn OpenCode server
